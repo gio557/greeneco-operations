@@ -4,7 +4,7 @@ import { initials } from '../utils.js'
 
 // Schermata di accesso del prototipo: si sceglie un utente demo.
 // Nella versione finale qui ci sarà il login con email e password (Supabase Auth).
-export default function Login({ onLogin }) {
+export default function Login({ onLogin, onBack }) {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -20,6 +20,9 @@ export default function Login({ onLogin }) {
 
   return (
     <div className="login">
+      {onBack && (
+        <button className="back-link" onClick={onBack}>‹ Torna alle aree</button>
+      )}
       <div className="login-brand">
         <img className="login-logo" src="./greeneco-logo.jpeg" alt="greeneco wastewater" />
         <h1>Gestione Straordinari</h1>

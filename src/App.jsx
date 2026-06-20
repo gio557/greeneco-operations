@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react'
 import { login } from './data/api.js'
+import Hub from './components/Hub.jsx'
 import Login from './components/Login.jsx'
 import Header from './components/Header.jsx'
 import EmployeeHome from './components/EmployeeHome.jsx'
 import ManagerHome from './components/ManagerHome.jsx'
+import ComingSoon from './components/ComingSoon.jsx'
 
 const SESSION_KEY = 'straordinari_session'
 
 export default function App() {
+  // Area selezionata nella schermata iniziale (null = mostra l'hub).
+  const [area, setArea] = useState(null)
   const [user, setUser] = useState(null)
   const [ready, setReady] = useState(false)
 
@@ -35,18 +39,30 @@ export default function App() {
     setUser(null)
   }
 
+  function backToHub() {
+    setArea(null)
+  }
+
   if (!ready) return null
 
-  if (!user) return <Login onLogin={handleLogin} />
+  // Schermata iniziale: scelta della macro-area.
+  if (!area) return <Hub onSelect={setArea} />
 
-  return (
-    <div className="app">
-      <Header user={user} onLogout={handleLogout} />
-      {user.role === 'manager' ? (
-        <ManagerHome user={user} />
-      ) : (
-        <EmployeeHome user={user} />
-      )}
-    </div>
-  )
+  // Area "Gestione straordinari": flusso esistente (login + home per ruolo).
+  if (area === 'straordinari') {
+    if (!user) return <Login onLogin={handleLogin} onBack={backToHub} />
+    return (
+      <div className="app">
+        <Header user={user} onLogout={handleLogout} onBack={backToHub} />
+        {user.role === 'manager' ? (
+          <ManagerHome user={user} />
+        ) : (
+          <EmployeeHome user={user} />
+        )}
+      </div>
+    )
+  }
+
+  // Altre aree: ancora in sviluppo.
+  return <ComingSoon area={area} onBack={backToHub} />
 }
