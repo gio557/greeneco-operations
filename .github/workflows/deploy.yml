@@ -28,13 +28,15 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      # Le chiavi Supabase arrivano dai Secrets del repository (Settings →
-      # Secrets and variables → Actions). Se non impostate, l'app viene
-      # compilata in modalità demo locale (nessun errore).
+      # Chiavi Supabase. Se imposti i Secret del repository (Settings →
+      # Secrets and variables → Actions) hanno la precedenza; altrimenti si
+      # usano i valori di fallback qui sotto. La chiave "anon" è pubblica per
+      # progettazione (viaggia nel bundle del browser e la sicurezza è data da
+      # Supabase Auth + RLS), quindi può stare nel workflow.
       - run: npm run build
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://sgszmrgmlfsengbyoljg.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnc3ptcmdtbGZzZW5nYnlvbGpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNTQ0NjUsImV4cCI6MjA5NzYzMDQ2NX0.95DqZr1UhsRPB8CYCE94kCVowSWx-6eKP6eChPFdt3Q' }}
       # enablement: true abilita GitHub Pages (sorgente "GitHub Actions")
       # automaticamente al primo deploy, senza toccare le impostazioni.
       - uses: actions/configure-pages@v5
