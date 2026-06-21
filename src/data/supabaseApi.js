@@ -230,3 +230,194 @@ export function subscribeToRequests(onChange) {
     supabase.removeChannel(channel)
   }
 }
+
+// ===========================================================================
+// AUTOMEZZI — presa in carico, segnalazioni, anagrafica mezzi, foto
+// ===========================================================================
+
+function rowToVehicle(v) {
+  return {
+    id: v.id,
+    name: v.name,
+    plate: v.plate ?? '',
+    department: v.department ?? '',
+    active: v.active,
+  }
+}
+
+function rowToHandover(h) {
+  return {
+    id: h.id,
+    vehicleId: h.vehicle_id,
+    employeeId: h.employee_id,
+    conditionOk: h.condition_ok,
+    note: h.note ?? '',
+    takenAt: h.taken_at,
+  }
+}
+
+function rowToIssue(i) {
+  return {
+    id: i.id,
+    vehicleId: i.vehicle_id,
+    handoverId: i.handover_id,
+    description: i.description,
+    photoUrl: i.photo_url,
+    status: i.status,
+    reportedBy: i.reported_by,
+    reportedAt: i.reported_at,
+    resolvedBy: i.resolved_by,
+    resolvedAt: i.resolved_at,
+  }
+}
+
+export async function listVehicles() {
+  const { data, error } = await supabase
+    .from('vehicles')
+    .select('*')
+    .eq('active', true)
+    .order('name', { ascending: true })
+  if (error) throw new Error(error.message)
+  return data.map(rowToVehicle)
+}
+
+export async function getVehicle(vehicleId) {
+  const { data, error } = await supabase
+    .from('vehicles')
+    .select('*')
+    .eq('id', vehicleId)
+    .maybeSingle()
+  if (error) throw new Error(error.message)
+  return data ? rowToVehicle(data) : null
+}
+
+export async function getOpenIssues(vehicleId) {
+  const { data, error } = await supabase
+    .from('vehicle_issues')
+    .select('*')
+    .eq('vehicle_id', vehicleId)
+    .eq('status', 'open')
+    .order('reported_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data.map(rowToIssue)
+}
+
+// Carica una foto nel bucket pubblico e restituisce l'URL pubblico.
+export async function uploadVehiclePhoto(file) {
+  const ext = (file.name?.split('.').pop() || 'jpg').toLowerCase()
+  const path = `veh-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+  const { error } = await supabase.storage
+    .from('vehicle-photos')
+    .upload(path, file, { contentType: file.type || 'image/jpeg' })
+  if (error) throw new Error(error.message)
+  const { data } = supabase.storage.from('vehicle-photos').getPublicUrl(path)
+  return data.publicUrl
+}
+
+// Registra una presa in carico. `issues` è l'elenco dei NUOVI danni segnalati
+// (ognuno { description, photoUrl }). conditionOk = true se nessun danno nuovo.
+export async function createHandover({ vehicleId, employeeId, note, issues }) {
+  const newIssues = issues || []
+  const conditionOk = newIssues.length === 0
+  const handoverId = `hov-${Date.now()}`
+
+  const { data, error } = await supabase
+    .from('vehicle_handovers')
+    .insert({
+      id: handoverId,
+      vehicle_id: vehicleId,
+      employee_id: employeeId,
+      condition_ok: conditionOk,
+      note: (note || '').trim(),
+    })
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
+
+  if (newIssues.length > 0) {
+    const rows = newIssues.map((it, idx) => ({
+      id: `iss-${Date.now()}-${idx}`,
+      vehicle_id: vehicleId,
+      handover_id: handoverId,
+      description: it.description.trim(),
+      photo_url: it.photoUrl || null,
+      status: 'open',
+      reported_by: employeeId,
+    }))
+    const { error: issErr } = await supabase.from('vehicle_issues').insert(rows)
+    if (issErr) throw new Error(issErr.message)
+  }
+
+  return rowToHandover(data)
+}
+
+export async function getRecentHandovers(limit = 200) {
+  const { data, error } = await supabase
+    .from('vehicle_handovers')
+    .select('*')
+    .order('taken_at', { ascending: false })
+    .limit(limit)
+  if (error) throw new Error(error.message)
+  return data.map(rowToHandover)
+}
+
+export async function getAllIssues() {
+  const { data, error } = await supabase
+    .from('vehicle_issues')
+    .select('*')
+    .order('reported_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data.map(rowToIssue)
+}
+
+export async function resolveIssue(issueId, actorId) {
+  const { error } = await supabase
+    .from('vehicle_issues')
+    .update({ status: 'resolved', resolved_by: actorId, resolved_at: new Date().toISOString() })
+    .eq('id', issueId)
+  if (error) throw new Error(error.message)
+}
+
+export async function adminListVehicles(adminId) {
+  // L'elenco mezzi è pubblico; adminId è accettato per coerenza di firma.
+  void adminId
+  const { data, error } = await supabase
+    .from('vehicles')
+    .select('*')
+    .order('name', { ascending: true })
+  if (error) throw new Error(error.message)
+  return data.map(rowToVehicle)
+}
+
+export async function adminUpsertVehicle(adminId, vehicle) {
+  const { data, error } = await supabase.rpc('admin_upsert_vehicle', {
+    p_admin_id: adminId,
+    p_id: (vehicle.id || '').trim(),
+    p_name: (vehicle.name || '').trim(),
+    p_plate: vehicle.plate || '',
+    p_department: vehicle.department || '',
+    p_active: vehicle.active !== false,
+  })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function adminDeleteVehicle(adminId, vehicleId) {
+  const { error } = await supabase.rpc('admin_delete_vehicle', {
+    p_admin_id: adminId,
+    p_vehicle_id: vehicleId,
+  })
+  if (error) throw new Error(error.message)
+}
+
+// Realtime su prese in carico e segnalazioni dei mezzi.
+export function subscribeToVehicleData(onChange) {
+  const channel = supabase
+    .channel('vehicle_changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'vehicle_handovers' }, onChange)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'vehicle_issues' }, onChange)
+    .subscribe()
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}

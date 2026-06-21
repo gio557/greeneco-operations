@@ -355,3 +355,155 @@ insert into public.overtime_requests
   ('req-1003', 'emp-1', 'mgr-1', current_date - 3, 1.5, 'Inventario di fine mese',                   'approved', 'Approvato, ricordati di timbrare.',    'mgr-1', now() - interval '4 day',   now() - interval '3 day'),
   ('req-1004', 'emp-3', 'mgr-2', current_date - 1, 4,   'Carico camion serale non previsto',         'rejected', 'Coperto da turno notturno, non necessario.', 'mgr-2', now() - interval '2 day', now() - interval '1 day')
 on conflict (id) do nothing;
+
+-- ===========================================================================
+-- AUTOMEZZI — presa in carico mezzi con QR e dichiarazione dello stato
+-- ---------------------------------------------------------------------------
+-- Ogni volta che un dipendente prende un mezzo registra una "presa in carico"
+-- (handover) dichiarando se rileva o meno nuovi danni. I danni diventano
+-- "segnalazioni" (issues) aperte, visibili a chi prende il mezzo dopo (così
+-- non si ri-segnala lo stesso problema) e risolvibili da manager/admin.
+-- ===========================================================================
+
+create table if not exists public.vehicles (
+  id          text primary key,
+  name        text not null,
+  plate       text,
+  department  text,
+  active      boolean not null default true,
+  created_at  timestamptz not null default now()
+);
+
+create table if not exists public.vehicle_handovers (
+  id           text primary key,
+  vehicle_id   text not null references public.vehicles (id) on delete cascade,
+  employee_id  text not null references public.profiles (id),
+  condition_ok boolean not null,           -- true = nessun danno nuovo dichiarato
+  note         text default '',
+  taken_at     timestamptz not null default now()
+);
+
+create table if not exists public.vehicle_issues (
+  id           text primary key,
+  vehicle_id   text not null references public.vehicles (id) on delete cascade,
+  handover_id  text references public.vehicle_handovers (id) on delete set null,
+  description  text not null,
+  photo_url    text,
+  status       text not null default 'open' check (status in ('open', 'resolved')),
+  reported_by  text references public.profiles (id),
+  reported_at  timestamptz not null default now(),
+  resolved_by  text references public.profiles (id),
+  resolved_at  timestamptz
+);
+
+create index if not exists vehicle_handovers_vehicle_idx on public.vehicle_handovers (vehicle_id);
+create index if not exists vehicle_issues_vehicle_idx on public.vehicle_issues (vehicle_id);
+
+alter table public.vehicles enable row level security;
+alter table public.vehicle_handovers enable row level security;
+alter table public.vehicle_issues enable row level security;
+
+-- Lettura mezzi: pubblica. Le modifiche al parco mezzi passano dalle funzioni
+-- admin_* (solo admin). Prese in carico e segnalazioni: inserimento/lettura
+-- con chiave anon (prototipo); l'aggiornamento serve per risolvere le segnalazioni.
+drop policy if exists "vehicles_select_anon" on public.vehicles;
+create policy "vehicles_select_anon" on public.vehicles for select to anon, authenticated using (true);
+
+drop policy if exists "handovers_select_anon" on public.vehicle_handovers;
+create policy "handovers_select_anon" on public.vehicle_handovers for select to anon, authenticated using (true);
+drop policy if exists "handovers_insert_anon" on public.vehicle_handovers;
+create policy "handovers_insert_anon" on public.vehicle_handovers for insert to anon, authenticated with check (true);
+
+drop policy if exists "issues_select_anon" on public.vehicle_issues;
+create policy "issues_select_anon" on public.vehicle_issues for select to anon, authenticated using (true);
+drop policy if exists "issues_insert_anon" on public.vehicle_issues;
+create policy "issues_insert_anon" on public.vehicle_issues for insert to anon, authenticated with check (true);
+drop policy if exists "issues_update_anon" on public.vehicle_issues;
+create policy "issues_update_anon" on public.vehicle_issues for update to anon, authenticated using (true) with check (true);
+
+-- Funzioni admin per l'anagrafica mezzi.
+create or replace function public.admin_upsert_vehicle(
+  p_admin_id   text,
+  p_id         text,
+  p_name       text,
+  p_plate      text,
+  p_department text,
+  p_active     boolean
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v public.vehicles;
+begin
+  if not public.app_is_admin(p_admin_id) then
+    raise exception 'Non autorizzato';
+  end if;
+  if coalesce(p_id, '') = '' or coalesce(p_name, '') = '' then
+    raise exception 'ID e nome del mezzo sono obbligatori';
+  end if;
+
+  insert into public.vehicles (id, name, plate, department, active)
+  values (p_id, p_name, nullif(p_plate, ''), nullif(p_department, ''), coalesce(p_active, true))
+  on conflict (id) do update set
+    name       = excluded.name,
+    plate      = excluded.plate,
+    department = excluded.department,
+    active     = excluded.active
+  returning * into v;
+
+  return jsonb_build_object(
+    'id', v.id, 'name', v.name, 'plate', v.plate,
+    'department', v.department, 'active', v.active
+  );
+end;
+$$;
+
+create or replace function public.admin_delete_vehicle(p_admin_id text, p_vehicle_id text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.app_is_admin(p_admin_id) then
+    raise exception 'Non autorizzato';
+  end if;
+  delete from public.vehicles where id = p_vehicle_id;
+end;
+$$;
+
+grant execute on function public.admin_upsert_vehicle(text, text, text, text, text, boolean) to anon, authenticated;
+grant execute on function public.admin_delete_vehicle(text, text) to anon, authenticated;
+
+-- Realtime sulle prese in carico e sulle segnalazioni.
+do $$
+begin
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='vehicle_handovers') then
+    alter publication supabase_realtime add table public.vehicle_handovers;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='vehicle_issues') then
+    alter publication supabase_realtime add table public.vehicle_issues;
+  end if;
+end $$;
+
+-- Storage per le foto dei danni (bucket pubblico in lettura).
+insert into storage.buckets (id, name, public)
+values ('vehicle-photos', 'vehicle-photos', true)
+on conflict (id) do nothing;
+
+drop policy if exists "veh_photos_select" on storage.objects;
+create policy "veh_photos_select" on storage.objects for select
+  to anon, authenticated using (bucket_id = 'vehicle-photos');
+drop policy if exists "veh_photos_insert" on storage.objects;
+create policy "veh_photos_insert" on storage.objects for insert
+  to anon, authenticated with check (bucket_id = 'vehicle-photos');
+
+-- Mezzi demo iniziali.
+insert into public.vehicles (id, name, plate, department) values
+  ('veh-1', 'Fiat Ducato',    'AB123CD', 'Logistica'),
+  ('veh-2', 'Iveco Daily',    'EF456GH', 'Produzione'),
+  ('veh-3', 'Renault Kangoo', 'IJ789KL', 'Manutenzione')
+on conflict (id) do nothing;

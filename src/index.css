@@ -1046,3 +1046,181 @@ code {
     text-align: right;
   }
 }
+
+/* =========================================================================
+   Automezzi — presa in carico, scanner QR, anagrafica
+   ========================================================================= */
+
+/* Scanner QR */
+.scanner-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 360px;
+  margin: 0 auto 12px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #000;
+}
+.scanner-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.scanner-reticle {
+  position: absolute;
+  inset: 18%;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  border-radius: 14px;
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.25);
+}
+
+/* Selezione mezzo (elenco a pulsanti) */
+.vehicle-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+.vehicle-pick-name { font-weight: 700; font-size: 16px; color: var(--navy); }
+.vehicle-pick-sub { font-size: 13px; color: var(--muted); }
+
+/* Intestazione mezzo */
+.vehicle-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+.vehicle-plate {
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--navy);
+  background: var(--sand);
+  border-radius: 8px;
+  padding: 4px 10px;
+}
+
+.mini-title { font-size: 15px; margin: 18px 0 8px; }
+
+.preexist { padding: 14px 16px; }
+
+.issue-list { margin: 6px 0 0; padding-left: 18px; }
+.issue-list li { margin: 4px 0; }
+.issue-photo-link { margin-left: 8px; font-size: 13px; }
+
+/* Editor segnalazioni nel flusso di presa in carico */
+.issue-editor {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: var(--card);
+}
+.issue-editor-row { display: flex; gap: 10px; margin-top: 8px; }
+.photo-btn { display: inline-flex; align-items: center; cursor: pointer; }
+.issue-preview {
+  margin-top: 10px;
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.big-confirm {
+  margin-top: 16px;
+  padding: 16px;
+  font-size: 16px;
+  line-height: 1.3;
+}
+.big-confirm.with-issues { background: var(--orange); }
+
+/* Esito presa in carico */
+.handover-result {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 auto 12px;
+}
+.handover-result.ok { background: var(--green); }
+.handover-result.warn { background: var(--orange); }
+
+/* Checkbox con etichetta */
+.field-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 16px;
+  font-size: 14px;
+}
+.field-check input { width: 18px; height: 18px; }
+
+/* Etichetta QR */
+.qr-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 59, 102, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  z-index: 50;
+}
+.qr-label {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  max-width: 320px;
+  box-shadow: var(--shadow);
+}
+.qr-img { width: 220px; height: 220px; image-rendering: pixelated; }
+.qr-meta { display: flex; flex-direction: column; margin-top: 8px; }
+.qr-meta strong { font-size: 18px; }
+.qr-meta span { color: var(--navy); font-weight: 600; letter-spacing: 1px; }
+.qr-url { word-break: break-all; margin: 8px 0 14px; }
+
+/* Elenco mezzi (vista controllo) */
+.vehicle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+}
+.vehicle-row-main { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.vehicle-row .user-card-arrow { color: var(--muted); font-size: 20px; }
+
+/* Scheda segnalazione (dettaglio mezzo) */
+.issue-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+.issue-card-main { flex: 1; min-width: 0; }
+.issue-desc { margin: 0 0 2px; font-weight: 600; }
+.issue-thumb {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex: none;
+}

@@ -61,6 +61,13 @@ export const CREDENTIALS = {
   'emp-3': 'demo123',
 }
 
+// Mezzi demo per la sezione "Presa in carico automezzi".
+export const VEHICLES = [
+  { id: 'veh-1', name: 'Fiat Ducato', plate: 'AB123CD', department: 'Logistica', active: true },
+  { id: 'veh-2', name: 'Iveco Daily', plate: 'EF456GH', department: 'Produzione', active: true },
+  { id: 'veh-3', name: 'Renault Kangoo', plate: 'IJ789KL', department: 'Manutenzione', active: true },
+]
+
 const today = new Date()
 const iso = (offsetDays) => {
   const d = new Date(today)
