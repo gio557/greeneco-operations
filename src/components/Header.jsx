@@ -1,7 +1,13 @@
 import { initials } from '../utils.js'
 
+const ROLE_LABELS = {
+  admin: 'Amministratore',
+  manager: 'Manager',
+  employee: 'Dipendente',
+}
+
 export default function Header({ user, onLogout, onBack }) {
-  const roleLabel = user.role === 'manager' ? 'Manager' : 'Dipendente'
+  const roleLabel = ROLE_LABELS[user.role] ?? 'Utente'
   return (
     <header className="app-header">
       <div className="app-brandbar">
@@ -16,7 +22,7 @@ export default function Header({ user, onLogout, onBack }) {
           <div>
             <div className="app-header-name">{user.name}</div>
             <div className="app-header-role">
-              {roleLabel} · {user.department}
+              {roleLabel}{user.department ? ` · ${user.department}` : ''}
             </div>
           </div>
         </div>

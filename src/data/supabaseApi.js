@@ -5,9 +5,9 @@
 // (vedi ./api.js e ./supabaseClient.js). Tutti i dispositivi leggono e
 // scrivono sullo stesso archivio, quindi i dati sono sempre aggiornati ovunque.
 //
-// Nota: in questa fase l'app usa l'accesso "semplice" (scelta del profilo,
-// senza login). La sicurezza fine (chi vede cosa) verrà aggiunta in seguito con
-// Supabase Auth + Row Level Security basata su auth.uid().
+// Accesso (prototipo): login con id/email + password verificata lato database
+// da funzioni sicure (vedi supabase/schema.sql). L'utente "admin" gestisce gli
+// altri utenti. La sicurezza fine (RLS su auth.uid) arriverà con il login reale.
 // ---------------------------------------------------------------------------
 
 import { supabase } from './supabaseClient.js'
@@ -54,15 +54,18 @@ export async function listUsers() {
   return data.map(rowToUser)
 }
 
-export async function login(userId) {
-  const { data, error } = await supabase
-    .from(PROFILES_TABLE)
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle()
+// Login con identificativo (id o email) + password. La verifica avviene lato
+// database (funzione sicura app_login): la password non transita mai nelle
+// query come testo confrontabile né viene esposta al client.
+export async function login(identifier, password) {
+  const { data, error } = await supabase.rpc('app_login', {
+    p_identifier: (identifier || '').trim(),
+    p_password: password || '',
+  })
   if (error) throw new Error(error.message)
-  if (!data) throw new Error('Utente non trovato')
-  return rowToUser(data)
+  if (!data) throw new Error('Credenziali non valide')
+  // La funzione restituisce già l'oggetto profilo in formato camelCase.
+  return data
 }
 
 export async function getRequestsForEmployee(employeeId) {
@@ -80,6 +83,16 @@ export async function getRequestsForManager(managerId) {
     .from(REQUESTS_TABLE)
     .select('*')
     .eq('manager_id', managerId)
+    .order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data.map(rowToRequest)
+}
+
+// Tutte le richieste dell'azienda (vista admin).
+export async function getAllRequests() {
+  const { data, error } = await supabase
+    .from(REQUESTS_TABLE)
+    .select('*')
     .order('created_at', { ascending: false })
   if (error) throw new Error(error.message)
   return data.map(rowToRequest)
@@ -118,9 +131,9 @@ export async function decideRequest({ requestId, decision, note, managerId }) {
   if (!['approved', 'rejected'].includes(decision)) {
     throw new Error('Decisione non valida')
   }
-  // Controllo di autorizzazione lato app: il manager può decidere solo sulle
-  // richieste del proprio team. (Verrà rafforzato con RLS quando ci sarà il
-  // login reale.)
+  // Controllo di autorizzazione lato app: il manager può decidere sulle
+  // richieste del proprio team; l'admin su qualsiasi richiesta. (Verrà
+  // rafforzato con RLS quando ci sarà il login reale.)
   const { data: existing, error: getError } = await supabase
     .from(REQUESTS_TABLE)
     .select('manager_id')
@@ -129,7 +142,14 @@ export async function decideRequest({ requestId, decision, note, managerId }) {
   if (getError) throw new Error(getError.message)
   if (!existing) throw new Error('Richiesta non trovata')
   if (existing.manager_id !== managerId) {
-    throw new Error('Non sei autorizzato a gestire questa richiesta')
+    const { data: actor } = await supabase
+      .from(PROFILES_TABLE)
+      .select('role')
+      .eq('id', managerId)
+      .maybeSingle()
+    if (!actor || actor.role !== 'admin') {
+      throw new Error('Non sei autorizzato a gestire questa richiesta')
+    }
   }
 
   const { data, error } = await supabase
@@ -152,6 +172,40 @@ export async function getUserMap() {
   const map = {}
   for (const u of users) map[u.id] = u
   return map
+}
+
+// --- Amministrazione utenti (solo ruolo "admin") --------------------------
+// L'autorizzazione è verificata lato database dalle funzioni admin_*.
+
+export async function adminListUsers(adminId) {
+  const { data, error } = await supabase.rpc('admin_list_users', {
+    p_admin_id: adminId,
+  })
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function adminUpsertUser(adminId, user) {
+  const { data, error } = await supabase.rpc('admin_upsert_user', {
+    p_admin_id: adminId,
+    p_id: (user.id || '').trim(),
+    p_name: (user.name || '').trim(),
+    p_role: user.role,
+    p_department: user.department || '',
+    p_manager_id: user.managerId || '',
+    p_email: user.email || '',
+    p_password: user.password || '',
+  })
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function adminDeleteUser(adminId, userId) {
+  const { error } = await supabase.rpc('admin_delete_user', {
+    p_admin_id: adminId,
+    p_user_id: userId,
+  })
+  if (error) throw new Error(error.message)
 }
 
 // Con il database centrale i dati sono condivisi: il reset dei dati demo non è

@@ -1,22 +1,24 @@
-import { useEffect, useState } from 'react'
-import { listUsers } from '../data/api.js'
-import { initials } from '../utils.js'
+import { useState } from 'react'
 
-// Schermata di accesso del prototipo: si sceglie un utente demo.
-// Nella versione finale qui ci sarà il login con email e password (Supabase Auth).
+// Schermata di accesso: ID (o email) + password.
+// La verifica delle credenziali avviene lato database (vedi supabase/schema.sql).
 export default function Login({ onLogin, onBack }) {
-  const [users, setUsers] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [identifier, setIdentifier] = useState('')
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
 
-  useEffect(() => {
-    listUsers().then((u) => {
-      setUsers(u)
-      setLoading(false)
-    })
-  }, [])
-
-  const managers = users.filter((u) => u.role === 'manager')
-  const employees = users.filter((u) => u.role === 'employee')
+  async function submit(e) {
+    e.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      await onLogin(identifier, password)
+    } catch (err) {
+      setError(err.message || 'Accesso non riuscito.')
+      setBusy(false)
+    }
+  }
 
   return (
     <div className="login">
@@ -29,38 +31,43 @@ export default function Login({ onLogin, onBack }) {
         <p>Richieste di ore straordinarie</p>
       </div>
 
-      {loading ? (
-        <p className="muted center">Caricamento…</p>
-      ) : (
-        <>
-          <p className="login-hint">
-            Demo: scegli con quale profilo accedere.
-          </p>
+      <form className="login-form" onSubmit={submit}>
+        <label className="field">
+          <span className="field-label">ID utente o email</span>
+          <input
+            className="input"
+            type="text"
+            autoComplete="username"
+            autoCapitalize="none"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            placeholder="es. emp-1"
+            required
+          />
+        </label>
+        <label className="field">
+          <span className="field-label">Password</span>
+          <input
+            className="input"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </label>
 
-          <UserGroup title="Manager" users={managers} onLogin={onLogin} />
-          <UserGroup title="Dipendenti" users={employees} onLogin={onLogin} />
-        </>
-      )}
+        {error && <p className="error">{error}</p>}
+
+        <button className="btn-primary btn-block" type="submit" disabled={busy}>
+          {busy ? 'Accesso…' : 'Accedi'}
+        </button>
+      </form>
+
+      <p className="login-hint">
+        Account demo — Admin: <code>admin</code> / <code>admin123</code> ·
+        {' '}Altri utenti: <code>mgr-1</code>, <code>emp-1</code>… / <code>demo123</code>
+      </p>
     </div>
-  )
-}
-
-function UserGroup({ title, users, onLogin }) {
-  return (
-    <section className="login-group">
-      <h2 className="section-title">{title}</h2>
-      <div className="login-list">
-        {users.map((u) => (
-          <button key={u.id} className="user-card" onClick={() => onLogin(u.id)}>
-            <span className="avatar">{initials(u.name)}</span>
-            <span className="user-card-text">
-              <span className="user-card-name">{u.name}</span>
-              <span className="user-card-sub">{u.department}</span>
-            </span>
-            <span className="user-card-arrow" aria-hidden>›</span>
-          </button>
-        ))}
-      </div>
-    </section>
   )
 }

@@ -30,14 +30,19 @@ Per provarla sul telefono nella stessa rete Wi-Fi:
 
 ## Come si usa il prototipo
 
-1. Nella schermata di accesso scegli un profilo demo.
-2. **Dipendente** (es. *Giulia Rossi*): vede le proprie richieste e ne crea di
-   nuove (data, ore, motivo).
-3. **Manager** (es. *Laura Bianchi*): vede le richieste del proprio team divise
-   in *Da approvare* e *Storico*, e può approvarle/rifiutarle con una nota.
+1. Accedi con **ID utente (o email) + password**. Account demo:
+   - **Admin**: `admin` / `admin123`
+   - **Manager/Dipendenti**: `mgr-1`, `emp-1`, … / `demo123`
+2. **Dipendente** (es. `emp-1`): vede le proprie richieste e ne crea di nuove
+   (data, ore, motivo).
+3. **Manager** (es. `mgr-1`): **dashboard** con statistiche, filtri e tabella di
+   tutte le richieste del proprio team; approva/rifiuta con nota.
+4. **Admin** (`admin`): dashboard su **tutte** le richieste dell'azienda e
+   scheda **Utenti** per creare/modificare/eliminare gli utenti e gestirne
+   **ID e password**.
 
-I dati restano salvati sul dispositivo. Per ripartire da zero, dalla console del
-browser: `localStorage.clear()` e ricarica.
+In modalità demo i dati restano sul dispositivo. Per ripartire da zero, dalla
+console del browser: `localStorage.clear()` e ricarica.
 
 ## Struttura del progetto
 
@@ -96,11 +101,15 @@ solo l'archivio da usare:
    repository secret* — creando `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
    Al successivo push su `main` il sito userà automaticamente il database.
 
-> **Accesso:** in questa fase l'app usa la **scelta del profilo** (senza
-> password) e le policy del database consentono l'accesso tramite la chiave
-> pubblica. Il login con **email e password** (Supabase Auth), con regole di
-> sicurezza più strette, è previsto come passo successivo: lo schema SQL
-> contiene già i suggerimenti in fondo al file.
+> **Accesso (prototipo):** login con **ID/email + password**. Le password sono
+> salvate **cifrate (bcrypt)** in una tabella separata e protetta
+> (`user_credentials`), leggibile solo da funzioni sicure lato database
+> (`SECURITY DEFINER`): non vengono mai esposte al browser. L'utente **admin**
+> gestisce gli altri utenti dalla dashboard.
+>
+> ⚠️ **Nota:** per una versione realmente in produzione l'autenticazione andrà
+> rifatta in modo **pienamente GDPR-compliant** (Supabase Auth, gestione
+> consensi e dei dati personali, policy RLS per-utente).
 
 ## Pubblicazione
 

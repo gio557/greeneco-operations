@@ -7,9 +7,9 @@
 // collegare il database centrale.
 // ---------------------------------------------------------------------------
 
-import { USERS, REQUESTS } from './seed.js'
+import { USERS, REQUESTS, CREDENTIALS } from './seed.js'
 
-const STORAGE_KEY = 'straordinari_state_v1'
+const STORAGE_KEY = 'straordinari_state_v2'
 
 function load() {
   try {
@@ -18,9 +18,22 @@ function load() {
   } catch {
     // localStorage non disponibile o dati corrotti: si riparte dal seed.
   }
-  const initial = { users: USERS, requests: REQUESTS }
+  const initial = { users: USERS, requests: REQUESTS, passwords: { ...CREDENTIALS } }
   save(initial)
   return initial
+}
+
+// Rimuove il campo password (non deve mai arrivare alla UI).
+function publicUser(u) {
+  if (!u) return u
+  // eslint-disable-next-line no-unused-vars
+  const { password, ...rest } = u
+  return rest
+}
+
+function assertAdmin(state, adminId) {
+  const admin = state.users.find((u) => u.id === adminId)
+  if (!admin || admin.role !== 'admin') throw new Error('Non autorizzato')
 }
 
 function save(state) {
@@ -40,11 +53,19 @@ export async function listUsers() {
   return load().users
 }
 
-export async function login(userId) {
+export async function login(identifier, password) {
   await delay()
-  const user = load().users.find((u) => u.id === userId)
-  if (!user) throw new Error('Utente non trovato')
-  return user
+  const state = load()
+  const id = (identifier || '').trim().toLowerCase()
+  const user = state.users.find(
+    (u) => u.id.toLowerCase() === id || (u.email || '').toLowerCase() === id
+  )
+  if (!user) throw new Error('Credenziali non valide')
+  const expected = state.passwords?.[user.id]
+  if (!expected || expected !== (password || '')) {
+    throw new Error('Credenziali non valide')
+  }
+  return publicUser(user)
 }
 
 export async function getRequestsForEmployee(employeeId) {
@@ -58,6 +79,13 @@ export async function getRequestsForManager(managerId) {
   await delay()
   return load()
     .requests.filter((r) => r.managerId === managerId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+}
+
+export async function getAllRequests() {
+  await delay()
+  return load()
+    .requests.slice()
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 }
 
@@ -93,7 +121,8 @@ export async function decideRequest({ requestId, decision, note, managerId }) {
   const state = load()
   const request = state.requests.find((r) => r.id === requestId)
   if (!request) throw new Error('Richiesta non trovata')
-  if (request.managerId !== managerId) {
+  const actor = state.users.find((u) => u.id === managerId)
+  if (request.managerId !== managerId && actor?.role !== 'admin') {
     throw new Error('Non sei autorizzato a gestire questa richiesta')
   }
 
@@ -113,9 +142,66 @@ export async function getUserMap() {
   return map
 }
 
+// --- Amministrazione utenti (solo ruolo "admin") --------------------------
+
+export async function adminListUsers(adminId) {
+  await delay(80)
+  const state = load()
+  assertAdmin(state, adminId)
+  const order = { admin: 0, manager: 1, employee: 2 }
+  return state.users
+    .map((u) => ({ ...publicUser(u), hasPassword: Boolean(state.passwords?.[u.id]) }))
+    .sort((a, b) => (order[a.role] - order[b.role]) || a.name.localeCompare(b.name))
+}
+
+export async function adminUpsertUser(adminId, user) {
+  await delay()
+  const state = load()
+  assertAdmin(state, adminId)
+  const id = (user.id || '').trim()
+  const name = (user.name || '').trim()
+  if (!id || !name) throw new Error('ID e nome sono obbligatori')
+  if (!['employee', 'manager', 'admin'].includes(user.role)) {
+    throw new Error('Ruolo non valido')
+  }
+
+  const next = {
+    id,
+    name,
+    role: user.role,
+    department: user.department || undefined,
+    managerId: user.managerId || undefined,
+    email: user.email || undefined,
+  }
+  const idx = state.users.findIndex((u) => u.id === id)
+  if (idx >= 0) state.users[idx] = next
+  else state.users.push(next)
+
+  if (user.password) {
+    state.passwords = state.passwords || {}
+    state.passwords[id] = user.password
+  }
+  save(state)
+  return publicUser(next)
+}
+
+export async function adminDeleteUser(adminId, userId) {
+  await delay()
+  const state = load()
+  assertAdmin(state, adminId)
+  if (adminId === userId) throw new Error('Non puoi eliminare il tuo stesso account')
+  const linked = state.requests.some(
+    (r) => r.employeeId === userId || r.managerId === userId || r.decidedBy === userId
+  )
+  if (linked) throw new Error('Impossibile eliminare: l\'utente ha richieste collegate')
+  state.users = state.users.filter((u) => u.id !== userId)
+  if (state.passwords) delete state.passwords[userId]
+  save(state)
+}
+
 // Solo per il prototipo: riporta i dati demo allo stato iniziale.
 export async function resetDemoData() {
-  save({ users: USERS, requests: REQUESTS })
+  save({ users: USERS, requests: REQUESTS, passwords: { ...CREDENTIALS } })
 }
 
 // In modalità demo non esiste sincronizzazione tra dispositivi: la

@@ -3,6 +3,13 @@
 
 export const USERS = [
   {
+    id: 'admin',
+    name: 'Amministratore',
+    role: 'admin',
+    department: 'Direzione',
+    email: 'admin@azienda.it',
+  },
+  {
     id: 'mgr-1',
     name: 'Laura Bianchi',
     role: 'manager',
@@ -41,6 +48,18 @@ export const USERS = [
     email: 'sara.colombo@azienda.it',
   },
 ]
+
+// Credenziali demo (modalità locale). In modalità Supabase le password sono
+// cifrate sul database; qui, essendo dati solo locali, restano in chiaro.
+//   admin → admin123   ·   tutti gli altri → demo123
+export const CREDENTIALS = {
+  admin: 'admin123',
+  'mgr-1': 'demo123',
+  'mgr-2': 'demo123',
+  'emp-1': 'demo123',
+  'emp-2': 'demo123',
+  'emp-3': 'demo123',
+}
 
 const today = new Date()
 const iso = (offsetDays) => {

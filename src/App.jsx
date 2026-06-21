@@ -4,7 +4,7 @@ import Hub from './components/Hub.jsx'
 import Login from './components/Login.jsx'
 import Header from './components/Header.jsx'
 import EmployeeHome from './components/EmployeeHome.jsx'
-import ManagerHome from './components/ManagerHome.jsx'
+import Dashboard from './components/Dashboard.jsx'
 import ComingSoon from './components/ComingSoon.jsx'
 
 const SESSION_KEY = 'straordinari_session'
@@ -15,22 +15,21 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [ready, setReady] = useState(false)
 
-  // Ripristina la sessione precedente all'avvio dell'app.
+  // Ripristina la sessione precedente all'avvio (salviamo il profilo, non la
+  // password, così non serve un nuovo accesso a ogni ricarica).
   useEffect(() => {
-    const savedId = localStorage.getItem(SESSION_KEY)
-    if (savedId) {
-      login(savedId)
-        .then(setUser)
-        .catch(() => localStorage.removeItem(SESSION_KEY))
-        .finally(() => setReady(true))
-    } else {
-      setReady(true)
+    try {
+      const saved = localStorage.getItem(SESSION_KEY)
+      if (saved) setUser(JSON.parse(saved))
+    } catch {
+      localStorage.removeItem(SESSION_KEY)
     }
+    setReady(true)
   }, [])
 
-  async function handleLogin(userId) {
-    const u = await login(userId)
-    localStorage.setItem(SESSION_KEY, u.id)
+  async function handleLogin(identifier, password) {
+    const u = await login(identifier, password)
+    localStorage.setItem(SESSION_KEY, JSON.stringify(u))
     setUser(u)
   }
 
@@ -48,17 +47,14 @@ export default function App() {
   // Schermata iniziale: scelta della macro-area.
   if (!area) return <Hub onSelect={setArea} />
 
-  // Area "Gestione straordinari": flusso esistente (login + home per ruolo).
+  // Area "Gestione straordinari": login + schermata in base al ruolo.
   if (area === 'straordinari') {
     if (!user) return <Login onLogin={handleLogin} onBack={backToHub} />
+    const isStaff = user.role === 'manager' || user.role === 'admin'
     return (
-      <div className="app">
+      <div className={isStaff ? 'app app-wide' : 'app'}>
         <Header user={user} onLogout={handleLogout} onBack={backToHub} />
-        {user.role === 'manager' ? (
-          <ManagerHome user={user} />
-        ) : (
-          <EmployeeHome user={user} />
-        )}
+        {isStaff ? <Dashboard user={user} /> : <EmployeeHome user={user} />}
       </div>
     )
   }

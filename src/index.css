@@ -687,3 +687,296 @@ button:disabled {
 .data-mode-supabase .data-dot {
   background: var(--green);
 }
+
+/* =========================================================================
+   Dashboard manager / admin
+   ========================================================================= */
+
+/* Layout più ampio per le schermate da browser (manager/admin). */
+.app-wide {
+  max-width: 1080px;
+}
+
+/* Input generico (usato fuori dai .field, es. ricerca). */
+.input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 11px 12px;
+  font: inherit;
+  background: #fff;
+}
+
+.field {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.login-form,
+.user-form {
+  display: block;
+  margin-top: 8px;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-sm {
+  padding: 7px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+.btn-ghost.danger {
+  color: var(--red);
+  border-color: var(--red-bg);
+}
+
+/* --- Tabs (admin) --- */
+.dash-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.dash-tab {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.dash-tab-active {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
+/* --- Statistiche --- */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.stat-pending {
+  border-left-color: var(--amber);
+}
+
+.stat-approved {
+  border-left-color: var(--green);
+}
+
+/* --- Filtri --- */
+.dash-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.dash-search {
+  flex: 1;
+  min-width: 200px;
+}
+
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  overflow: hidden;
+}
+
+.seg-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 14px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.seg-btn-active {
+  background: var(--navy);
+  color: #fff;
+}
+
+/* --- Tabella --- */
+.table-wrap {
+  overflow-x: auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.dash-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.dash-table th,
+.dash-table td {
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.dash-table thead th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: #fbfcfd;
+}
+
+.dash-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.dash-table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dash-table .reason-cell {
+  max-width: 320px;
+}
+
+.actions-col {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.dash-table .subrow td {
+  background: #fbfcfd;
+}
+
+.small {
+  font-size: 13px;
+}
+
+.decide-panel {
+  display: block;
+}
+
+.decide-panel .decision-actions {
+  margin-top: 8px;
+}
+
+code {
+  background: #eef1f5;
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 0.92em;
+}
+
+/* --- Adattamento mobile: la tabella diventa un elenco di schede --- */
+@media (max-width: 720px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .table-wrap {
+    overflow: visible;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .dash-table,
+  .dash-table tbody,
+  .dash-table tr,
+  .dash-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .dash-table thead {
+    display: none;
+  }
+
+  .dash-table tbody tr {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 12px;
+    padding: 6px 12px;
+  }
+
+  .dash-table tbody tr.subrow {
+    margin-top: -10px;
+  }
+
+  .dash-table td {
+    border-bottom: 1px solid var(--line);
+    padding: 9px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .dash-table tr td:last-child {
+    border-bottom: none;
+  }
+
+  .dash-table td::before {
+    content: attr(data-label);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .dash-table .reason-cell {
+    max-width: none;
+  }
+
+  .dash-table .num {
+    text-align: right;
+  }
+
+  .dash-table .subrow td::before {
+    content: none;
+  }
+
+  .dash-table .subrow td {
+    display: block;
+  }
+
+  .actions-col {
+    text-align: right;
+  }
+}
