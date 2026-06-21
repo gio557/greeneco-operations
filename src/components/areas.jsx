@@ -81,10 +81,10 @@ export const AREAS = [
   {
     id: 'automezzi',
     title: 'Presa in carico automezzi',
-    subtitle: 'Registra l’uso dei mezzi aziendali',
+    subtitle: 'Scansiona il QR e dichiara lo stato del mezzo',
     accent: '#ee964b',
     Icon: TruckIcon,
-    ready: false,
+    ready: true,
   },
   {
     id: 'attrezzature',

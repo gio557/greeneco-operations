@@ -35,3 +35,17 @@ export const adminUpsertUser = impl.adminUpsertUser
 export const adminDeleteUser = impl.adminDeleteUser
 export const resetDemoData = impl.resetDemoData
 export const subscribeToRequests = impl.subscribeToRequests
+
+// Automezzi
+export const listVehicles = impl.listVehicles
+export const getVehicle = impl.getVehicle
+export const getOpenIssues = impl.getOpenIssues
+export const uploadVehiclePhoto = impl.uploadVehiclePhoto
+export const createHandover = impl.createHandover
+export const getRecentHandovers = impl.getRecentHandovers
+export const getAllIssues = impl.getAllIssues
+export const resolveIssue = impl.resolveIssue
+export const adminListVehicles = impl.adminListVehicles
+export const adminUpsertVehicle = impl.adminUpsertVehicle
+export const adminDeleteVehicle = impl.adminDeleteVehicle
+export const subscribeToVehicleData = impl.subscribeToVehicleData

@@ -7,9 +7,9 @@
 // collegare il database centrale.
 // ---------------------------------------------------------------------------
 
-import { USERS, REQUESTS, CREDENTIALS } from './seed.js'
+import { USERS, REQUESTS, CREDENTIALS, VEHICLES } from './seed.js'
 
-const STORAGE_KEY = 'straordinari_state_v2'
+const STORAGE_KEY = 'straordinari_state_v3'
 
 function load() {
   try {
@@ -18,7 +18,14 @@ function load() {
   } catch {
     // localStorage non disponibile o dati corrotti: si riparte dal seed.
   }
-  const initial = { users: USERS, requests: REQUESTS, passwords: { ...CREDENTIALS } }
+  const initial = {
+    users: USERS,
+    requests: REQUESTS,
+    passwords: { ...CREDENTIALS },
+    vehicles: VEHICLES,
+    handovers: [],
+    issues: [],
+  }
   save(initial)
   return initial
 }
@@ -201,12 +208,146 @@ export async function adminDeleteUser(adminId, userId) {
 
 // Solo per il prototipo: riporta i dati demo allo stato iniziale.
 export async function resetDemoData() {
-  save({ users: USERS, requests: REQUESTS, passwords: { ...CREDENTIALS } })
+  save({
+    users: USERS,
+    requests: REQUESTS,
+    passwords: { ...CREDENTIALS },
+    vehicles: VEHICLES,
+    handovers: [],
+    issues: [],
+  })
 }
 
 // In modalità demo non esiste sincronizzazione tra dispositivi: la
 // sottoscrizione "tempo reale" è un'operazione vuota che ritorna una funzione
 // di pulizia, per mantenere la stessa firma della versione Supabase.
 export function subscribeToRequests() {
+  return () => {}
+}
+
+// --- Automezzi -------------------------------------------------------------
+
+export async function listVehicles() {
+  await delay(80)
+  return load().vehicles.filter((v) => v.active !== false)
+}
+
+export async function getVehicle(vehicleId) {
+  await delay(60)
+  return load().vehicles.find((v) => v.id === vehicleId) || null
+}
+
+export async function getOpenIssues(vehicleId) {
+  await delay(60)
+  return load()
+    .issues.filter((i) => i.vehicleId === vehicleId && i.status === 'open')
+    .sort((a, b) => b.reportedAt.localeCompare(a.reportedAt))
+}
+
+// In demo la "foto" viene tenuta come data URL locale.
+export async function uploadVehiclePhoto(file) {
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(new Error('Lettura foto non riuscita'))
+    reader.readAsDataURL(file)
+  })
+}
+
+export async function createHandover({ vehicleId, employeeId, note, issues }) {
+  await delay()
+  const state = load()
+  const newIssues = issues || []
+  const now = new Date().toISOString()
+  const handover = {
+    id: `hov-${Date.now()}`,
+    vehicleId,
+    employeeId,
+    conditionOk: newIssues.length === 0,
+    note: (note || '').trim(),
+    takenAt: now,
+  }
+  state.handovers.push(handover)
+  newIssues.forEach((it, idx) => {
+    state.issues.push({
+      id: `iss-${Date.now()}-${idx}`,
+      vehicleId,
+      handoverId: handover.id,
+      description: it.description.trim(),
+      photoUrl: it.photoUrl || null,
+      status: 'open',
+      reportedBy: employeeId,
+      reportedAt: now,
+      resolvedBy: null,
+      resolvedAt: null,
+    })
+  })
+  save(state)
+  return handover
+}
+
+export async function getRecentHandovers(limit = 200) {
+  await delay()
+  return load()
+    .handovers.slice()
+    .sort((a, b) => b.takenAt.localeCompare(a.takenAt))
+    .slice(0, limit)
+}
+
+export async function getAllIssues() {
+  await delay()
+  return load()
+    .issues.slice()
+    .sort((a, b) => b.reportedAt.localeCompare(a.reportedAt))
+}
+
+export async function resolveIssue(issueId, actorId) {
+  await delay()
+  const state = load()
+  const issue = state.issues.find((i) => i.id === issueId)
+  if (!issue) throw new Error('Segnalazione non trovata')
+  issue.status = 'resolved'
+  issue.resolvedBy = actorId
+  issue.resolvedAt = new Date().toISOString()
+  save(state)
+}
+
+export async function adminListVehicles(adminId) {
+  await delay(80)
+  const state = load()
+  assertAdmin(state, adminId)
+  return state.vehicles.slice().sort((a, b) => a.name.localeCompare(b.name))
+}
+
+export async function adminUpsertVehicle(adminId, vehicle) {
+  await delay()
+  const state = load()
+  assertAdmin(state, adminId)
+  const id = (vehicle.id || '').trim()
+  const name = (vehicle.name || '').trim()
+  if (!id || !name) throw new Error('ID e nome del mezzo sono obbligatori')
+  const next = {
+    id,
+    name,
+    plate: vehicle.plate || '',
+    department: vehicle.department || '',
+    active: vehicle.active !== false,
+  }
+  const idx = state.vehicles.findIndex((v) => v.id === id)
+  if (idx >= 0) state.vehicles[idx] = next
+  else state.vehicles.push(next)
+  save(state)
+  return next
+}
+
+export async function adminDeleteVehicle(adminId, vehicleId) {
+  await delay()
+  const state = load()
+  assertAdmin(state, adminId)
+  state.vehicles = state.vehicles.filter((v) => v.id !== vehicleId)
+  save(state)
+}
+
+export function subscribeToVehicleData() {
   return () => {}
 }

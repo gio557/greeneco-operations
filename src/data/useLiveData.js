@@ -1,6 +1,9 @@
 import { useEffect } from 'react'
 import { subscribeToRequests } from './api.js'
 
+// `subscribe` di default ascolta le richieste straordinari; le altre sezioni
+// (es. automezzi) passano la propria funzione di sottoscrizione realtime.
+
 // ---------------------------------------------------------------------------
 // Hook per tenere una lista SEMPRE aggiornata, con tre meccanismi che si
 // completano a vicenda:
@@ -18,7 +21,7 @@ import { subscribeToRequests } from './api.js'
 // le dipendenze che, cambiando, fanno ripartire la sottoscrizione (es. l'utente
 // che ha effettuato l'accesso).
 // ---------------------------------------------------------------------------
-export function useLiveData(refresh, deps = []) {
+export function useLiveData(refresh, deps = [], subscribe = subscribeToRequests) {
   useEffect(() => {
     let active = true
 
@@ -30,7 +33,7 @@ export function useLiveData(refresh, deps = []) {
     refresh(true)
 
     // 1) Aggiornamenti realtime dal database centrale.
-    const unsubscribe = subscribeToRequests(reload)
+    const unsubscribe = subscribe(reload)
 
     // 2) Ricarica al ritorno in primo piano / a finestra di nuovo visibile.
     document.addEventListener('visibilitychange', reload)
