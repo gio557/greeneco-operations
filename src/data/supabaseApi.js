@@ -549,3 +549,38 @@ export function subscribeToClockings(onChange) {
     supabase.removeChannel(channel)
   }
 }
+
+// ===========================================================================
+// BACKUP / ESPORTAZIONE DATI (admin)
+// ===========================================================================
+
+// Copia completa (sola lettura) di tutte le tabelle dati, per un export manuale
+// di sicurezza. NON include le password (la tabella credenziali è protetta e
+// inaccessibile dal client). I dati sono restituiti grezzi, come nel database.
+const EXPORT_TABLES = [
+  'profiles',
+  'overtime_requests',
+  'time_clockings',
+  'vehicles',
+  'vehicle_handovers',
+  'vehicle_issues',
+]
+
+export async function exportAllData(adminId) {
+  // Controllo applicativo: solo l'admin può esportare (sarà rafforzato da RLS
+  // con il login reale).
+  const { data: actor } = await supabase
+    .from(PROFILES_TABLE)
+    .select('role')
+    .eq('id', adminId)
+    .maybeSingle()
+  if (!actor || actor.role !== 'admin') throw new Error('Non autorizzato')
+
+  const out = {}
+  for (const table of EXPORT_TABLES) {
+    const { data, error } = await supabase.from(table).select('*')
+    if (error) throw new Error(`${table}: ${error.message}`)
+    out[table] = data || []
+  }
+  return out
+}

@@ -433,6 +433,23 @@ export async function createClocking({ employeeId, kind, lat, lng, accuracy }) {
   return clocking
 }
 
+// Copia completa dei dati per l'export manuale (solo admin). Esclude le
+// password. I nomi delle tabelle ricalcano quelli del database centrale, così
+// il file di backup ha la stessa forma in entrambe le modalità.
+export async function exportAllData(adminId) {
+  await delay(120)
+  const state = load()
+  assertAdmin(state, adminId)
+  return {
+    profiles: (state.users || []).map(publicUser),
+    overtime_requests: state.requests || [],
+    time_clockings: state.clockings || [],
+    vehicles: state.vehicles || [],
+    vehicle_handovers: state.handovers || [],
+    vehicle_issues: state.issues || [],
+  }
+}
+
 export function subscribeToClockings() {
   return () => {}
 }
