@@ -28,6 +28,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # Collaudo: se i test falliscono, il deploy si ferma qui.
+      - run: npm test
       # Chiavi Supabase. Se imposti i Secret del repository (Settings →
       # Secrets and variables → Actions) hanno la precedenza; altrimenti si
       # usano i valori di fallback qui sotto. La chiave "anon" è pubblica per

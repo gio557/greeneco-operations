@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { adminListUsers, adminUpsertUser, adminDeleteUser } from '../data/api.js'
+import { adminListUsers, adminUpsertUser, adminDeleteUser, exportAllData } from '../data/api.js'
+import { downloadTextFile } from '../timesheet.js'
 
 const ROLE_LABELS = { admin: 'Amministratore', manager: 'Manager', employee: 'Dipendente' }
 
@@ -10,6 +11,35 @@ export default function UsersAdmin({ admin }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [editing, setEditing] = useState(null) // null | {user} | 'new'
+  const [exporting, setExporting] = useState(false)
+
+  async function exportBackup() {
+    setExporting(true)
+    try {
+      const data = await exportAllData(admin.id)
+      const counts = Object.fromEntries(
+        Object.entries(data).map(([table, rows]) => [table, rows.length])
+      )
+      const payload = {
+        app: 'greeneco-operations',
+        exportedAt: new Date().toISOString(),
+        exportedBy: admin.id,
+        note: 'Copia di sicurezza dei dati. Le password NON sono incluse.',
+        counts,
+        data,
+      }
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')
+      downloadTextFile(
+        `backup_greeneco_${stamp}.json`,
+        JSON.stringify(payload, null, 2),
+        'application/json;charset=utf-8;'
+      )
+    } catch (err) {
+      window.alert(err.message || 'Esportazione non riuscita.')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   async function load() {
     setLoading(true)
@@ -117,6 +147,19 @@ export default function UsersAdmin({ admin }) {
         creazione. La password viene salvata cifrata; lasciala vuota in modifica
         per non cambiarla.
       </p>
+
+      <div className="backup-box">
+        <h3 className="mini-title">Backup dati</h3>
+        <p className="muted small">
+          Scarica una copia di sicurezza di tutti i dati (utenti, richieste,
+          timbrature, mezzi) in un unico file JSON. Le password non sono
+          incluse. Utile come copia manuale finché non sarà attivo il backup
+          automatico.
+        </p>
+        <button className="btn-ghost" onClick={exportBackup} disabled={exporting}>
+          {exporting ? 'Esportazione…' : '⬇ Esporta backup completo (JSON)'}
+        </button>
+      </div>
     </div>
   )
 }

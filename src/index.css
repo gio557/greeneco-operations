@@ -1326,6 +1326,23 @@ code {
 .privacy-list { padding-left: 18px; }
 .privacy-list li { margin: 4px 0; }
 
+/* --- Riquadro backup dati (admin) --- */
+.backup-box {
+  margin-top: 22px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfcfd;
+}
+.backup-box .mini-title { margin-top: 0; }
+.backup-box .btn-ghost {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-top: 4px;
+}
+.backup-box .btn-ghost:disabled { opacity: .5; }
+
 /* --- Riepilogo mensile timbrature (cartellino) --- */
 .ts-toolbar {
   display: flex;

@@ -33,6 +33,7 @@ export const getUserMap = impl.getUserMap
 export const adminListUsers = impl.adminListUsers
 export const adminUpsertUser = impl.adminUpsertUser
 export const adminDeleteUser = impl.adminDeleteUser
+export const exportAllData = impl.exportAllData
 export const resetDemoData = impl.resetDemoData
 export const subscribeToRequests = impl.subscribeToRequests
 
