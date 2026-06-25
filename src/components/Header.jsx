@@ -1,4 +1,5 @@
 import { initials } from '../utils.js'
+import { usePendingClockings } from '../data/usePendingClockings.js'
 
 const ROLE_LABELS = {
   admin: 'Amministratore',
@@ -8,6 +9,7 @@ const ROLE_LABELS = {
 
 export default function Header({ user, onLogout, onBack }) {
   const roleLabel = ROLE_LABELS[user.role] ?? 'Utente'
+  const pending = usePendingClockings()
   return (
     <header className="app-header">
       <div className="app-brandbar">
@@ -30,6 +32,11 @@ export default function Header({ user, onLogout, onBack }) {
           Esci
         </button>
       </div>
+      {pending > 0 && (
+        <div className="header-pending" role="status">
+          ⏳ {pending === 1 ? '1 timbratura' : `${pending} timbrature`} su questo dispositivo in attesa di invio — verrà{pending === 1 ? '' : 'anno'} inviata{pending === 1 ? '' : 'e'} appena torna la rete
+        </div>
+      )}
     </header>
   )
 }
