@@ -7,7 +7,7 @@ in vista di un accordo sindacale e dell'eventuale adozione dello strumento.
 
 | | |
 |---|---|
-| **Versione documento** | 0.2 — bozza preliminare (modello viaggio/lavoro/pausa) |
+| **Versione documento** | 0.3 — bozza preliminare (modello viaggio/lavoro/pausa, con schermate) |
 | **Data** | 25 giugno 2026 |
 | **Ambito** | Esclusivamente il modulo "Timbrature Presenze" |
 | **Stato dello strumento** | Prototipo dimostrativo (non ancora in esercizio con dati reali) |
@@ -93,6 +93,26 @@ Le attività previste sono:
 **Esempio di giornata:** *Inizio viaggio* 08:00 → *Inizio lavoro* 09:30 → *Inizio pausa* 13:00 →
 *Riprendi lavoro* 14:00 → *Inizio viaggio* 17:30 → *Fine giornata* 19:00. Risultato: **lavoro 6:30,
 viaggio 3:00, pausa 1:00 (non pagata)**.
+
+**Schermate del dipendente** *(immagini con dati dimostrativi):*
+
+![Accesso dipendente](img/login.png)
+*Accesso: il dipendente entra con il proprio ID e password.*
+
+![Informativa alla prima timbratura](img/informativa.png)
+*Alla prima timbratura compare l'informativa (testo segnaposto, da validare).*
+
+![Stato fuori servizio](img/stato-fuori.png)
+*Fuori servizio: si avvia il viaggio verso il cliente oppure, se già sul posto, il lavoro.*
+
+![Stato in viaggio](img/stato-viaggio.png)
+*In viaggio: all'arrivo dal cliente si preme «Inizio lavoro»; al rientro «Fine giornata» chiude anche il viaggio.*
+
+![Stato al lavoro](img/stato-lavoro.png)
+*Al lavoro: si può avviare la pausa, il viaggio di ritorno o chiudere la giornata. In basso lo storico con l'attività di ogni timbratura.*
+
+![Stato in pausa](img/stato-pausa.png)
+*In pausa: delimitata da inizio e ripresa, non viene conteggiata.*
 
 **Caratteristiche rilevanti ai fini della valutazione:**
 
@@ -189,6 +209,14 @@ mezzanotte è ripartito tra i due giorni). Per ciascun giorno:
 - **ore ordinarie** = minimo tra ore di lavoro e soglia; **straordinarie** = eccedenza **delle sole
   ore di lavoro**;
 - il **viaggio è pagato ma non concorre mai allo straordinario**; la **pausa non è retribuita**.
+
+**Schermate per manager/amministratore** *(immagini con dati dimostrativi):*
+
+![Vista in tempo reale](img/board-live.png)
+*Tempo reale: chi è in viaggio / al lavoro / in pausa in questo momento e l'elenco delle timbrature recenti.*
+
+![Riepilogo mensile (cartellino)](img/cartellino.png)
+*Riepilogo mensile: per ogni giorno ore di lavoro, di cui straordinarie, viaggio, pausa e totale retribuito, con totali di fine mese e download in CSV.*
 
 > **Da definire con il Consulente:** se il calcolo dello straordinario debba avvenire su base
 > **giornaliera** (come oggi) o **settimanale/contrattuale**; il trattamento di festivi, notturni,
