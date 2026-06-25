@@ -94,9 +94,25 @@ export function makeResilientClockings(remote, options = {}) {
     storage.write(MIRROR_KEY, pruneOld(dedupeSortDesc(list), now()).slice(0, 500))
   const mergeMirror = (fresh) => saveMirror([...(fresh || []), ...getMirror()]) // fresh vince
 
+  // Segnala all'interfaccia che il numero di timbrature in attesa è cambiato,
+  // così l'avviso nell'header si aggiorna subito (oltre al polling periodico).
+  const notifyPending = () => {
+    try {
+      if (typeof window !== 'undefined') window.dispatchEvent(new Event('clock-pending-changed'))
+    } catch {
+      /* ambiente senza window (test): si ignora */
+    }
+  }
+
   const getOutbox = () => storage.read(OUTBOX_KEY)
-  const enqueue = (item) => storage.write(OUTBOX_KEY, [...getOutbox(), item])
-  const dequeue = (id) => storage.write(OUTBOX_KEY, getOutbox().filter((i) => i.id !== id))
+  const enqueue = (item) => {
+    storage.write(OUTBOX_KEY, [...getOutbox(), item])
+    notifyPending()
+  }
+  const dequeue = (id) => {
+    storage.write(OUTBOX_KEY, getOutbox().filter((i) => i.id !== id))
+    notifyPending()
+  }
 
   const localView = (employeeId) => {
     const pend = getOutbox().filter((i) => i.employeeId === employeeId).map((i) => ({ ...i, pending: true }))
