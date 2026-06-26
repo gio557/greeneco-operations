@@ -1,12 +1,27 @@
 import { useEffect, useMemo, useState } from 'react'
 import { adminListUsers, adminUpsertUser, adminDeleteUser, exportAllData } from '../data/api.js'
 import { downloadTextFile } from '../timesheet.js'
+import { initials } from '../utils.js'
 
 const ROLE_LABELS = { admin: 'Amministratore', manager: 'Manager', employee: 'Dipendente' }
 const SECTION = {
   managers: { role: 'manager', title: 'Gestione manager', singular: 'manager' },
   employees: { role: 'employee', title: 'Gestione dipendenti', singular: 'dipendente' },
   admins: { role: 'admin', title: 'Amministratori', singular: 'amministratore' },
+}
+
+const svgProps = {
+  viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8,
+  strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true,
+}
+function IcoManager() {
+  return <svg {...svgProps}><circle cx="12" cy="8" r="3.4" /><path d="M5.5 20a6.5 6.5 0 0 1 13 0" /></svg>
+}
+function IcoPeople() {
+  return <svg {...svgProps}><circle cx="9" cy="9" r="3" /><path d="M3.2 19a5.8 5.8 0 0 1 11.6 0" /><path d="M16 6.2a3 3 0 0 1 0 5.6" /><path d="M17.6 13.5A5.8 5.8 0 0 1 20.8 19" /></svg>
+}
+function IcoShield() {
+  return <svg {...svgProps}><path d="M12 3l7 2.6v5c0 4.3-3 7.3-7 8.8-4-1.5-7-4.5-7-8.8v-5z" /><path d="M9.2 12l1.9 1.9L15 10" /></svg>
 }
 
 // Amministrazione utenti: tre ingressi (manager, dipendenti, amministratori).
@@ -151,21 +166,33 @@ export default function UsersAdmin({ admin }) {
       <h2 className="section-title">Gestione utenti</h2>
       {error && <p className="error">{error}</p>}
       <div className="admin-tiles">
-        <button className="admin-tile" onClick={() => setSection('managers')}>
-          <span className="admin-tile-title">Gestione manager</span>
-          <span className="admin-tile-sub">Crea i manager e assegna i dipendenti del loro team</span>
+        <button className="admin-tile" style={{ '--accent': '#0d3b66' }} onClick={() => setSection('managers')}>
+          <span className="admin-tile-ico"><IcoManager /></span>
+          <span className="admin-tile-text">
+            <span className="admin-tile-title">Gestione manager</span>
+            <span className="admin-tile-sub">Crea i manager e assegna i dipendenti del loro team</span>
+          </span>
           <span className="admin-tile-count">{managers.length}</span>
+          <span className="admin-tile-arrow" aria-hidden>›</span>
         </button>
-        <button className="admin-tile" onClick={() => setSection('employees')}>
-          <span className="admin-tile-title">Gestione dipendenti</span>
-          <span className="admin-tile-sub">Crea i dipendenti e abbinali a uno o più manager</span>
+        <button className="admin-tile" style={{ '--accent': '#2e9e5b' }} onClick={() => setSection('employees')}>
+          <span className="admin-tile-ico"><IcoPeople /></span>
+          <span className="admin-tile-text">
+            <span className="admin-tile-title">Gestione dipendenti</span>
+            <span className="admin-tile-sub">Crea i dipendenti e abbinali a uno o più manager</span>
+          </span>
           <span className="admin-tile-count">{employees.length}</span>
+          <span className="admin-tile-arrow" aria-hidden>›</span>
         </button>
       </div>
-      <button className="admin-tile admin-tile-sm" onClick={() => setSection('admins')}>
-        <span className="admin-tile-title">Amministratori</span>
-        <span className="admin-tile-sub">Gestisci gli account amministratore</span>
+      <button className="admin-tile admin-tile-sm" style={{ '--accent': '#b7791f' }} onClick={() => setSection('admins')}>
+        <span className="admin-tile-ico"><IcoShield /></span>
+        <span className="admin-tile-text">
+          <span className="admin-tile-title">Amministratori</span>
+          <span className="admin-tile-sub">Gestisci gli account amministratore</span>
+        </span>
         <span className="admin-tile-count">{admins.length}</span>
+        <span className="admin-tile-arrow" aria-hidden>›</span>
       </button>
 
       <p className="login-hint">
@@ -292,9 +319,10 @@ function UserForm({ admin, role, user, managers, employees, onCancel, onSaved })
             ) : (
               <div className="check-list">
                 {managers.map((m) => (
-                  <label key={m.id} className="check-item">
+                  <label key={m.id} className={`check-item${managerIds.has(m.id) ? ' checked' : ''}`}>
                     <input type="checkbox" checked={managerIds.has(m.id)} onChange={() => toggle(setManagerIds)(m.id)} />
-                    <span>{m.name} <code>{m.id}</code></span>
+                    <span className="avatar avatar-sm">{initials(m.name)}</span>
+                    <span className="check-name">{m.name}<code>{m.id}</code></span>
                   </label>
                 ))}
               </div>
@@ -310,9 +338,10 @@ function UserForm({ admin, role, user, managers, employees, onCancel, onSaved })
             ) : (
               <div className="check-list">
                 {employees.map((emp) => (
-                  <label key={emp.id} className="check-item">
+                  <label key={emp.id} className={`check-item${teamIds.has(emp.id) ? ' checked' : ''}`}>
                     <input type="checkbox" checked={teamIds.has(emp.id)} onChange={() => toggle(setTeamIds)(emp.id)} />
-                    <span>{emp.name} <code>{emp.id}</code></span>
+                    <span className="avatar avatar-sm">{initials(emp.name)}</span>
+                    <span className="check-name">{emp.name}<code>{emp.id}</code></span>
                   </label>
                 ))}
               </div>
