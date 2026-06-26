@@ -12,6 +12,17 @@ del lavoro: ciascun modulo ha un proprio manuale dettagliato, allegato a parte.
 
 ---
 
+## Da dove iniziare
+
+**Documento: «Guida rapida — GreenEco Operations»** *(separato, schematico)*
+
+Una panoramica **a colpo d'occhio** di tutta l'app: un **diagramma di flusso** per
+ogni funzione (accesso, timbrature, straordinari, automezzi, multe, cassetto,
+categorie e permessi) e una tabella **«chi vede cosa»**. Da leggere per primo;
+i manuali qui sotto entrano nel dettaglio.
+
+---
+
 ## Moduli e documenti
 
 ### 1. Timbrature Presenze
@@ -29,6 +40,19 @@ Gestione delle **multe** addebitabili al dipendente che aveva il mezzo:
 registrazione e **attribuzione automatica** dal passaggio di consegna, **allegato
 della scansione del verbale** (archivio privato), **notifica** al dipendente e
 **presa visione/contestazione**.
+
+### 3. Cassetto del dipendente
+
+Spazio personale con **Cedolini**, **Multe** e **Sanzioni disciplinari**. I
+documenti sono **strettamente privati**: l'Ufficio paghe li carica e ogni
+dipendente vede **solo i propri** (archivio privato con link a scadenza). Schema
+di flusso nella **Guida rapida**, § 6.
+
+### 4. Categorie & Permessi
+
+Le **categorie** (reparti) decidono cosa ogni utente vede e può fare, tramite
+**flag** granulari accendibili/spegnibili. **Ogni modifica è confermata con la
+password** dell'utente abilitato. Schemi di flusso nella **Guida rapida**, § 7.
 
 ---
 
@@ -53,6 +77,7 @@ della scansione del verbale** (archivio privato), **notifica** al dipendente e
 ## Elenco dei file
 
 - `manuale-indice.html` — questo documento
+- `manuale-rapido.html` (e `.md`) — **Guida rapida** (schemi di flusso)
 - `manuale-timbrature.html` (e `.md`) — Timbrature Presenze
 - `manuale-sanzioni.html` (e `.md`) — Sanzioni sui mezzi
 
