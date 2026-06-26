@@ -26,6 +26,17 @@ test('responsabile decide gli straordinari ma non gestisce utenti', () => {
   assert.equal(puo(u, 'area.utenti', cfg), false)
 })
 
+test('Fase 3: scope dati — il responsabile vede solo il team, CEO/admin tutto', () => {
+  const resp = { id: 'm', role: 'manager', department: 'Responsabile' }
+  const ceo = { id: 'c', role: 'manager', department: 'CEO & C' }
+  const amm = { id: 'a', role: 'admin', department: 'Amministratore' }
+  // Il responsabile NON ha "dati.tutti" → vede solo il proprio team.
+  assert.equal(puo(resp, 'dati.tutti', cfg), false)
+  // CEO & C e Amministratore vedono i dati di tutti i reparti.
+  assert.equal(puo(ceo, 'dati.tutti', cfg), true)
+  assert.equal(puo(amm, 'dati.tutti', cfg), true)
+})
+
 test('ufficio paghe gestisce i cassetti', () => {
   const u = { id: 'p', role: 'paghe', department: 'Ufficio paghe' }
   assert.equal(puo(u, 'cassetti.manage', cfg), true)

@@ -27,7 +27,7 @@ function parseMonth(value) {
 // Riepilogo mensile delle presenze: una tabella per dipendente (giorno per
 // giorno) con ore ordinarie e straordinarie, scaricabile in CSV.
 export default function MonthlyTimesheet({ user, permConfig = null }) {
-  const isAdmin = user.role === 'admin'
+  const seeAll = puo(user, 'dati.tutti', permConfig)
   const canExport = puo(user, 'timbrature.export', permConfig)
   const [month, setMonth] = useState(currentMonthValue)
   const [threshold, setThreshold] = useState(DEFAULT_THRESHOLD)
@@ -62,13 +62,13 @@ export default function MonthlyTimesheet({ user, permConfig = null }) {
     }
   }, [year, month0])
 
-  // Dipendenti visibili: l'admin vede tutti (escluso se stesso), il manager
-  // solo il proprio team.
+  // Dipendenti visibili: chi vede i dati di tutti li vede tutti (esclusi gli
+  // account amministratore, che non timbrano), gli altri solo il proprio team.
   const employees = useMemo(() => {
     return Object.values(userMap)
-      .filter((u) => (isAdmin ? u.role !== 'admin' : (u.managerIds || []).includes(user.id)))
+      .filter((u) => (seeAll ? u.role !== 'admin' : (u.managerIds || []).includes(user.id)))
       .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-  }, [userMap, isAdmin, user.id])
+  }, [userMap, seeAll, user.id])
 
   // Allinea la selezione quando cambia l'elenco.
   useEffect(() => {

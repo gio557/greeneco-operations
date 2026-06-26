@@ -19,7 +19,7 @@ const STATUS_FILTERS = [
 
 // Vista richieste della dashboard: statistiche, filtri e tabella con azioni.
 export default function RequestsBoard({ user, permConfig = null }) {
-  const isAdmin = user.role === 'admin'
+  const seeAll = puo(user, 'dati.tutti', permConfig)
   const canDecide = puo(user, 'straordinari.decide', permConfig)
   const [requests, setRequests] = useState([])
   const [userMap, setUserMap] = useState({})
@@ -30,7 +30,7 @@ export default function RequestsBoard({ user, permConfig = null }) {
   async function refresh(showSpinner = false) {
     if (showSpinner) setLoading(true)
     const [reqs, map] = await Promise.all([
-      isAdmin ? getAllRequests() : getRequestsForManager(user.id),
+      seeAll ? getAllRequests() : getRequestsForManager(user.id),
       getUserMap(),
     ])
     setRequests(reqs)

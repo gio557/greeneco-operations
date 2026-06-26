@@ -12,7 +12,7 @@ import FineAttachment from './FineAttachment.jsx'
 // Gestione sanzioni per manager/admin: registrazione (con attribuzione proposta
 // dal passaggio di consegna attivo alla data dell'infrazione) ed elenco.
 export default function VehicleFines({ user, permConfig = null }) {
-  const isAdmin = user.role === 'admin'
+  const seeAll = puo(user, 'dati.tutti', permConfig)
   const canManage = puo(user, 'multe.manage', permConfig)
   const canCancel = puo(user, 'multe.cancel', permConfig)
   const [vehicles, setVehicles] = useState([])
@@ -30,7 +30,7 @@ export default function VehicleFines({ user, permConfig = null }) {
   useLiveData(refresh, [user.id], subscribeToFines)
   const attachUrls = useFineAttachments(fines)
 
-  const inScope = (employeeId) => isAdmin || (userMap[employeeId]?.managerIds || []).includes(user.id)
+  const inScope = (employeeId) => seeAll || (userMap[employeeId]?.managerIds || []).includes(user.id)
   const visible = useMemo(() => fines.filter((f) => inScope(f.employeeId)), [fines, userMap]) // eslint-disable-line react-hooks/exhaustive-deps
   const name = (id) => userMap[id]?.name || id || '—'
   const vname = (id) => vehicles.find((v) => v.id === id)?.name || id || '—'

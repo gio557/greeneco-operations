@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { getRecentClockings, getUserMap, subscribeToClockings } from '../data/api.js'
 import { useLiveData } from '../data/useLiveData.js'
+import { puo } from '../permissions.js'
 import { formatDateTime } from '../utils.js'
 import { normalizeKind, ACTIVITIES } from '../timesheet.js'
 import { clockingChecks, isToVerify } from '../clockingFlags.js'
@@ -12,7 +13,7 @@ const STATE_LABEL = { travel: 'In viaggio', work: 'Al lavoro', break: 'In pausa'
 // tutti. (Su impianto prototipo il filtro è applicativo; con auth reale + RLS
 // diventerà un controllo d'accesso forte.)
 export default function TimbratureBoard({ user, permConfig = null }) {
-  const isAdmin = user.role === 'admin'
+  const seeAll = puo(user, 'dati.tutti', permConfig)
   const [view, setView] = useState('live')
   const [clockings, setClockings] = useState([])
   const [userMap, setUserMap] = useState({})
@@ -30,7 +31,7 @@ export default function TimbratureBoard({ user, permConfig = null }) {
   useLiveData(refresh, [user.id], subscribeToClockings)
 
   const inScope = (employeeId) =>
-    isAdmin || (userMap[employeeId]?.managerIds || []).includes(user.id)
+    seeAll || (userMap[employeeId]?.managerIds || []).includes(user.id)
 
   const visible = useMemo(() => clockings.filter((c) => inScope(c.employeeId)), [clockings, userMap])
 
