@@ -1,8 +1,9 @@
-// Sistema di permessi per CATEGORIA (Fase 1). Le categorie ("reparti") portano
-// una serie di flag granulari; un livello centrale `puo()` decide gli accessi.
-// In questa fase i flag "area.*" governano la VISIBILITÀ delle aree; gli altri
-// sono già nel catalogo e verranno collegati alle singole azioni nelle fasi
-// successive.
+// Sistema di permessi per CATEGORIA. Le categorie ("reparti") sono l'UNICA
+// autorità su "cosa si vede e cosa si può fare": ogni categoria porta una serie
+// di flag granulari e un livello centrale `puo()` decide ogni accesso e ogni
+// azione di modifica. Il vecchio "ruolo" non governa più i permessi: resta solo
+// come struttura organizzativa (relazione manager↔dipendente) e come ripiego
+// anti-blocco per gli utenti non ancora associati a una categoria.
 
 export const DEFAULT_CATEGORIES = [
   'Amministratore', 'CEO & C', 'Responsabile', 'Ufficio paghe',
@@ -32,6 +33,7 @@ export const PERMISSIONS = [
   { group: 'Profili', key: 'profili.create', label: 'Creare/modificare profili' },
   { group: 'Profili', key: 'profili.delete', label: 'Eliminare profili' },
   { group: 'Profili', key: 'profili.category', label: "Cambiare la categoria di un utente" },
+  { group: 'Visibilità dati', key: 'dati.tutti', label: 'Vedere i dati di tutti i reparti (non solo il proprio team)' },
   { group: 'Categorie & Permessi', key: 'area.permessi', label: 'Vedere Categorie & Permessi' },
   { group: 'Categorie & Permessi', key: 'permessi.edit', label: 'Modificare i flag / creare categorie' },
   { group: 'Backup', key: 'backup.export', label: 'Esportare il backup completo' },

@@ -59,17 +59,21 @@ export default function App() {
     getPermissionsConfig().then(setPermConfig).catch(() => {})
   }, [user])
 
-  // Carica le sanzioni del dipendente loggato (per badge, banner e modale).
+  // Chi ha un proprio "cassetto" con le multe (flag multe.view_own) può ricevere
+  // sanzioni: per loro carichiamo le multe (badge, banner e modale di avviso).
+  const hasOwnFines = puo(user, 'multe.view_own', permConfig)
+
   useEffect(() => {
-    if (user?.role === 'employee') {
+    if (hasOwnFines) {
       getFinesForEmployee(user.id).then(setFines).catch(() => {})
     } else {
       setFines([])
     }
-  }, [user])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, hasOwnFines])
 
   function reloadFines() {
-    if (user?.role === 'employee') getFinesForEmployee(user.id).then(setFines).catch(() => {})
+    if (hasOwnFines) getFinesForEmployee(user.id).then(setFines).catch(() => {})
   }
 
   async function handleLogin(identifier, password) {
@@ -110,7 +114,7 @@ export default function App() {
   // Sanzioni non ancora prese in visione (per badge, banner e modale di avviso).
   const unackFines = fines.filter((f) => f.status === 'registered')
   const fineModal =
-    user.role === 'employee' && unackFines.length > 0 && !fineModalSeen ? (
+    hasOwnFines && unackFines.length > 0 && !fineModalSeen ? (
       <FineNoticeModal
         fines={unackFines}
         busy={ackBusy}

@@ -1,15 +1,17 @@
 import { initials } from '../utils.js'
 import { usePendingClockings } from '../data/usePendingClockings.js'
 
+// Ripiego se l'utente non ha ancora una categoria assegnata.
 const ROLE_LABELS = {
   admin: 'Amministratore',
-  manager: 'Manager',
-  employee: 'Dipendente',
+  manager: 'Responsabile',
+  employee: 'Operativo',
   paghe: 'Ufficio paghe',
 }
 
 export default function Header({ user, onLogout, onBack, finesCount = 0 }) {
-  const roleLabel = ROLE_LABELS[user.role] ?? 'Utente'
+  // L'identità mostrata è la categoria ("reparto"); il ruolo è solo un ripiego.
+  const categoryLabel = user.department || ROLE_LABELS[user.role] || 'Utente'
   const pending = usePendingClockings()
   return (
     <header className="app-header">
@@ -25,7 +27,7 @@ export default function Header({ user, onLogout, onBack, finesCount = 0 }) {
           <div>
             <div className="app-header-name">{user.name}</div>
             <div className="app-header-role">
-              {roleLabel}{user.department ? ` · ${user.department}` : ''}
+              {categoryLabel}
             </div>
           </div>
         </div>
