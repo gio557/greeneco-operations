@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { listClients, upsertClient, deleteClient } from '../data/api.js'
+import { searchAddress } from '../data/geocode.js'
 import AddressAutocomplete from './AddressAutocomplete.jsx'
 
 // Anagrafica clienti: elenco e maschera di inserimento/modifica. L'indirizzo si
@@ -104,6 +105,7 @@ function ClientForm({ client, onCancel, onSaved }) {
   const [coords, setCoords] = useState({ lat: client?.lat ?? null, lng: client?.lng ?? null })
   const [active, setActive] = useState(client?.active !== false)
   const [busy, setBusy] = useState(false)
+  const [phase, setPhase] = useState('')
   const [error, setError] = useState('')
 
   function onPick(r) {
@@ -112,23 +114,43 @@ function ClientForm({ client, onCancel, onSaved }) {
     if (!name.trim() && r.name) setName(r.name)
   }
 
+  // Digitando a mano l'indirizzo le coordinate non sono più valide: si azzerano
+  // così al salvataggio vengono ricavate automaticamente dal testo inserito.
+  function onTypeAddress(v) {
+    setAddress(v)
+    setCoords({ lat: null, lng: null })
+  }
+
   async function submit(e) {
     e.preventDefault()
     if (!name.trim()) { setError('Indica la ragione sociale.'); return }
     setBusy(true)
     setError('')
     try {
+      let { lat, lng } = coords
+      // Se mancano le coordinate ma c'è un indirizzo, prova a geolocalizzarlo.
+      if ((lat == null || lng == null) && address.trim().length >= 3) {
+        setPhase('Geolocalizzo l’indirizzo…')
+        const res = await searchAddress(address.trim(), { limit: 1 })
+        if (res[0]) { lat = res[0].lat; lng = res[0].lng }
+        setPhase('')
+      }
       await upsertClient({
         id: client?.id,
         name: name.trim(),
         address: address.trim(),
-        lat: coords.lat,
-        lng: coords.lng,
+        lat,
+        lng,
         active,
       })
+      if (lat == null && address.trim()) {
+        // Salvato comunque, ma avvisa che la posizione non è stata trovata.
+        window.alert('Cliente salvato, ma non sono riuscito a trovare la posizione di questo indirizzo. Puoi correggerlo e riprovare, oppure selezionare un suggerimento.')
+      }
       await onSaved()
     } catch (err) {
       setError(err.message || 'Salvataggio non riuscito.')
+      setPhase('')
       setBusy(false)
     }
   }
@@ -146,14 +168,14 @@ function ClientForm({ client, onCancel, onSaved }) {
           <span className="field-label">Indirizzo</span>
           <AddressAutocomplete
             value={address}
-            onChange={setAddress}
+            onChange={onTypeAddress}
             onSelect={onPick}
             placeholder="Digita la via o il nome del cliente…"
           />
           <span className="field-hint">
             {coords.lat != null
               ? `✓ Posizione acquisita (${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)})`
-              : 'Seleziona un suggerimento per geolocalizzare il cliente (consigliato).'}
+              : 'Puoi selezionare un suggerimento, oppure scrivere l’indirizzo: la posizione verrà cercata al salvataggio.'}
           </span>
         </label>
         <label className="check-item" style={{ maxWidth: 260 }}>
@@ -163,7 +185,7 @@ function ClientForm({ client, onCancel, onSaved }) {
         {error && <p className="error">{error}</p>}
         <div className="decision-actions">
           <button type="button" className="btn-ghost" onClick={onCancel}>Annulla</button>
-          <button type="submit" className="btn-primary" disabled={busy}>{busy ? 'Salvataggio…' : 'Salva'}</button>
+          <button type="submit" className="btn-primary" disabled={busy}>{phase || (busy ? 'Salvataggio…' : 'Salva')}</button>
         </div>
       </form>
     </>

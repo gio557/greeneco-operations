@@ -39,7 +39,9 @@ export async function searchAddress(query, { limit = 6, signal } = {}) {
       lng: Number(r.lon),
       name: r.namedetails?.name || null,
     }))
-    cache.set(q, out)
+    // Si memorizzano solo i risultati non vuoti: così un esito vuoto (o un
+    // errore transitorio) non "avvelena" la cache impedendo nuovi tentativi.
+    if (out.length) cache.set(q, out)
     return out
   } catch {
     // Rete assente o richiesta annullata: nessun suggerimento.
