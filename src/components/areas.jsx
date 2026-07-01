@@ -34,11 +34,16 @@ function TruckIcon() {
   )
 }
 
-// Attrezzature: chiave inglese
-function WrenchIcon() {
+// Rapportini d'intervento: appunti/clipboard con checklist e penna
+function ReportIcon() {
   return (
     <svg {...svgProps}>
-      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+      <path d="M9 4H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6.5" />
+      <rect x="9" y="2.8" width="6" height="3.2" rx="1" />
+      <path d="M8.5 11l1 1 1.6-1.8" />
+      <path d="M8.5 15.5l1 1 1.6-1.8" />
+      <path d="M13 11.5h2.5" /><path d="M13 16h2.5" />
+      <path d="M15.8 8.6l3-3 1.6 1.6-3 3-1.9.3z" />
     </svg>
   )
 }
@@ -95,11 +100,11 @@ export const AREAS = [
     ready: true,
   },
   {
-    id: 'attrezzature',
-    title: 'Presa in carico attrezzature',
-    subtitle: 'Assegna e restituisci le attrezzature',
+    id: 'rapportini',
+    title: "Rapportini d'intervento",
+    subtitle: 'Compila e consulta i rapportini di intervento',
     accent: '#2e9e5b',
-    Icon: WrenchIcon,
+    Icon: ReportIcon,
     ready: false,
   },
   {
